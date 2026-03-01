@@ -18,6 +18,14 @@ def check_data_integrity(df):
     print(df['EDUCATION'].value_counts().sort_index())
     # Sprawdzenie duplikatów
     print(f"\nLiczba zduplikowanych wierszy: {df.duplicated().sum()}")
+    # Sprawdzenie wieku 
+    underage = df[df['AGE'] < 18]
+    overage = df[df['AGE'] > 100]
+    invalid_limits = df[df['LIMIT_BAL'] < 0]
+    print(f"Liczba kredytobiorców niepełnoletnich (niemozliwe): {len(underage)}")
+    print(f"Liczba zbyt leciwych kredytobiorców (błąd) : {len(overage)}")
+    print(f"Limity niemające sensu: {len(invalid_limits)} ")
+
 
 def preprocess_data(df):
     # 1. Naprawa kategorii Education (0, 5, 6 -> 4 czyli 'Others')
@@ -27,6 +35,29 @@ def preprocess_data(df):
     # 3. Inżynieria cech: Utilization Ratio
     df['utilization_ratio'] = df['BILL_AMT1'] / df['LIMIT_BAL']
     return df
+
+def make_plots(df):
+    # POPRAWKA: dodany znak '=' w figsize
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    sns.histplot(df['AGE'], kde=True, ax=axes[0], color='skyblue', bins=30)
+    axes[0].set_title('Rozkład Wieku Klientów (AGE)')
+    axes[0].set_xlabel('Wiek')
+    axes[0].set_ylabel('Liczba Klientów')
+
+    sns.histplot(df['LIMIT_BAL'], kde=True, ax=axes[1], color='salmon', bins=50)
+    axes[1].set_title('Rozkład Limitu Kredytowego (LIMIT_BAL)')
+    axes[1].set_xlabel('Limit Kredytowy (NTD)')
+    axes[1].set_ylabel('Liczba Klientów')
+
+    plt.tight_layout()
+
+    PLOTS_DIR = 'plots'
+    if not os.path.exists(PLOTS_DIR):
+        os.makedirs(PLOTS_DIR)
+        
+    plt.savefig(os.path.join(PLOTS_DIR, 'age_limit_distributions.png'), dpi=300)
+    print(f"Sukces! Wykres zapisany jako plots/age_limit_distributions.png")
 
 def make_corr_matrix(df, ax, title):
     # Rysujemy heatmapę na konkretnym obszarze (ax)
@@ -61,6 +92,8 @@ if __name__ == "__main__":
             make_corr_matrix(data[cols], ax=axes[i], title=group_name)
             
         plt.tight_layout()
+
+        make_plots(data)
         
         # 5. Zapisywanie i wyświetlanie
         PLOTS_DIR = 'plots'
@@ -68,5 +101,5 @@ if __name__ == "__main__":
             os.makedirs(PLOTS_DIR)
             
         plt.savefig(os.path.join(PLOTS_DIR, 'correlation_matrices.png'), dpi=300, bbox_inches='tight')
-        print(f"\nSukces! Wykres zapisany w folderze {PLOTS_DIR}")
+        print(f"\nSukces! Macierze korelacji zapisane w folderze {PLOTS_DIR}")
         plt.show()
